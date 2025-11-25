@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Nov 24 21:32:36 2025
-
-@author: shuyuandai
-"""
-
 
 import streamlit as st
 import json
@@ -22,7 +14,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 初始默认数据 (复刻 React 版) ---
+# --- 常量定义 ---
+# 定义北京时间时区 (UTC+8)
+BEIJING_TZ = datetime.timezone(datetime.timedelta(hours=8))
+
 INITIAL_DATA = [
     {
         "id": "color", "name": "颜色",
@@ -56,46 +51,66 @@ INITIAL_DATA = [
 DATA_FILE = "journal_profiles.json"
 
 # --- 自定义 CSS 美化 ---
+# 修复逻辑：
+# 1. 删除了 height: 3em，让按钮高度自适应
+# 2. .result-box 增加了 color: #333333，强制文字为深色，解决夜间模式白字白底看不见的问题
+# 3. 减小了 padding，让框看起来不那么巨大
 st.markdown("""
 <style>
     .stButton>button {
         width: 100%;
         border-radius: 10px;
-        height: 3em;
-    }
-    .big-btn {
-        font-size: 20px !important;
-        padding: 20px !important;
+        /* height: auto;  让它自适应 */
     }
     .card {
         background-color: #f0f2f6;
-        padding: 20px;
+        padding: 15px;
         border-radius: 10px;
         border: 1px solid #e0e0e0;
         margin-bottom: 10px;
     }
     .result-box {
         background-color: #ffffff;
-        padding: 25px;
-        border-radius: 15px;
+        color: #333333 !important; /* 强制深色文字，防止夜间模式看不见 */
+        padding: 15px 20px; /* 减小内边距 */
+        border-radius: 12px;
         border-left: 5px solid #6366f1;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        margin-top: 20px;
-        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-top: 15px;
+    }
+    /* 针对夜间模式的特定修复，确保标题也是深色 */
+    .result-box h3 {
+        color: #333333 !important;
+        margin-top: 0;
+    }
+    .result-box strong {
+        color: #000000 !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # --- 数据管理函数 ---
 def load_profiles():
+    data = []
     if os.path.exists(DATA_FILE):
         try:
             with open(DATA_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                data = json.load(f)
         except:
             pass
-    # 默认初始化
-    return [{"id": "user_1", "name": "默认用户", "data": copy.deepcopy(INITIAL_DATA)}]
+    
+    if not data:
+        data = [{"id": "user_1", "name": "默认用户", "password": "981003", "data": copy.deepcopy(INITIAL_DATA)}]
+    
+    # 数据迁移：确保老数据也有 password 字段
+    for p in data:
+        if "password" not in p:
+            # 如果是默认用户，补全特定密码，否则补全默认 '123456'
+            if p['id'] == 'user_1' or p['name'] == '默认用户':
+                p['password'] = "981003"
+            else:
+                p['password'] = "123456" 
+    return data
 
 def save_profiles():
     with open(DATA_FILE, 'w', encoding='utf-8') as f:
@@ -110,6 +125,10 @@ if 'active_user_index' not in st.session_state:
 
 if 'result' not in st.session_state:
     st.session_state.result = None
+
+# 解锁状态存储：格式为 {"user_id": True/False}
+if 'unlocked_status' not in st.session_state:
+    st.session_state.unlocked_status = {}
 
 # --- 侧边栏：用户管理 ---
 with st.sidebar:
@@ -127,40 +146,52 @@ with st.sidebar:
     new_index = user_names.index(selected_name)
     if new_index != st.session_state.active_user_index:
         st.session_state.active_user_index = new_index
-        st.session_state.result = None # 切换用户清除结果
+        st.session_state.result = None 
+        # 切换用户时，重置所有解锁状态（或者保留？这里选择为了安全，切换就锁上）
+        st.session_state.unlocked_status = {}
         st.rerun()
 
     current_profile = st.session_state.profiles[st.session_state.active_user_index]
+    current_uid = current_profile['id']
+
+    st.divider()
 
     # 添加新用户
     with st.expander("➕ 添加新用户"):
         new_user_name = st.text_input("新用户名称")
+        # 新增：密码设置
+        new_user_pass = st.text_input("设置6位数字密码", max_chars=6, type="password")
+        
         if st.button("创建用户"):
-            if new_user_name:
-                new_profile = {
-                    "id": f"user_{datetime.datetime.now().timestamp()}",
-                    "name": new_user_name,
-                    "data": copy.deepcopy(INITIAL_DATA)
-                }
-                st.session_state.profiles.append(new_profile)
-                save_profiles()
-                st.session_state.active_user_index = len(st.session_state.profiles) - 1
-                st.rerun()
+            if new_user_name and new_user_pass:
+                if len(new_user_pass) != 6 or not new_user_pass.isdigit():
+                    st.error("密码必须是6位数字！")
+                else:
+                    new_profile = {
+                        "id": f"user_{datetime.datetime.now().timestamp()}",
+                        "name": new_user_name,
+                        "password": new_user_pass,
+                        "data": copy.deepcopy(INITIAL_DATA)
+                    }
+                    st.session_state.profiles.append(new_profile)
+                    save_profiles()
+                    st.session_state.active_user_index = len(st.session_state.profiles) - 1
+                    st.success(f"用户 {new_user_name} 创建成功！")
+                    st.rerun()
+            else:
+                st.error("名称和密码不能为空")
     
-    # 修改/删除用户
-    with st.expander("✏️ 编辑当前用户"):
-        edit_name = st.text_input("修改名称", value=current_profile['name'])
-        if st.button("保存名称"):
-            current_profile['name'] = edit_name
-            save_profiles()
-            st.rerun()
-            
-        if len(st.session_state.profiles) > 1:
-            if st.button("🗑️ 删除此用户", type="primary"):
-                st.session_state.profiles.pop(st.session_state.active_user_index)
-                st.session_state.active_user_index = 0
-                save_profiles()
-                st.rerun()
+    # 删除用户 (需要先解锁)
+    if len(st.session_state.profiles) > 1:
+        if st.session_state.unlocked_status.get(current_uid, False):
+             with st.expander("🗑️ 删除用户"):
+                 st.warning("删除后无法恢复！")
+                 if st.button("确认删除当前用户", type="primary"):
+                    st.session_state.profiles.pop(st.session_state.active_user_index)
+                    st.session_state.active_user_index = 0
+                    st.session_state.unlocked_status = {}
+                    save_profiles()
+                    st.rerun()
 
 # --- 主页面逻辑 ---
 st.header(f"✨ 手帐挑战: {current_profile['name']}")
@@ -185,28 +216,25 @@ with tab1:
     if st.session_state.get("trigger_gen"):
         is_daily = st.session_state.generate_type == "daily"
         
-        # 设置随机种子
         if is_daily:
-            seed_str = datetime.date.today().strftime("%Y%m%d")
+            # 使用北京时间作为种子
+            beijing_now = datetime.datetime.now(BEIJING_TZ)
+            seed_str = beijing_now.strftime("%Y%m%d")
             random.seed(seed_str)
+            time_display = beijing_now.strftime("%Y-%m-%d")
         else:
-            random.seed(None) # 真正的随机
+            random.seed(None)
+            time_display = datetime.datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M")
             
         active_categories = current_profile['data']
         results = []
         
-        # 1. 找胶带 (ID为tape或名字含胶带)
         tape_cat = next((c for c in active_categories if c['id'] == 'tape' or '胶带' in c['name']), None)
-        # 如果没找到胶带，强制用第一个
         if not tape_cat and active_categories: tape_cat = active_categories[0]
         
-        # 2. 其他栏目
         others = [c for c in active_categories if c != tape_cat]
-        
-        # 3. 随机选 1-2 个其他
         count = min(random.randint(1, 2), len(others))
         selected_others = random.sample(others, count)
-        
         final_cats = ([tape_cat] if tape_cat else []) + selected_others
         
         for cat in final_cats:
@@ -220,7 +248,7 @@ with tab1:
             elif item['type'] == 'range':
                 val = random.randint(int(item.get('min', 1)), int(item.get('max', 10)))
                 val_str = str(val)
-            else: # list
+            else: 
                 opts = [x.strip() for x in item.get('options', '').replace('，', ',').split(',') if x.strip()]
                 val_str = random.choice(opts) if opts else "???"
                 
@@ -231,19 +259,20 @@ with tab1:
             
         st.session_state.result = {
             "type": "每日挑战" if is_daily else "随机挑战",
-            "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "time": time_display,
             "items": results
         }
-        st.session_state.trigger_gen = False # 重置触发器
-        if is_daily: random.seed(None) # 恢复随机状态
+        st.session_state.trigger_gen = False 
+        if is_daily: random.seed(None)
 
     # 显示结果
     if st.session_state.result:
         res = st.session_state.result
+        # 这里的 CSS 配合上面的 style 标签，保证了深色文字
         st.markdown(f"""
         <div class="result-box">
-            <h3>{res['type']} <span style="font-size:18pt;color:gray">{res['time']}</span></h3>
-            <hr style="margin: 10px 0;">
+            <h3>{res['type']} <span style="font-size:0.6em;color:#666">{res['time']}</span></h3>
+            <hr style="margin: 10px 0; border-top: 1px solid #eee;">
         """, unsafe_allow_html=True)
         
         for item in res['items']:
@@ -253,104 +282,109 @@ with tab1:
     else:
         st.info("👈 点击上方按钮开始抽取")
 
-
-# === TAB 2: 栏目维护 ===
+# === TAB 2: 栏目维护 (带密码锁) ===
 with tab2:
-    st.caption("这里可以修改属于你的规则库。修改后会自动保存。")
-    
-    # 遍历分类
-    categories = current_profile['data']
-    
-    for i, cat in enumerate(categories):
-        with st.expander(f"📁 {cat['name']} ({len(cat['items'])}条规则)"):
-            
-            # 修改栏目名
-            col_name, col_del = st.columns([3, 1])
-            new_cat_name = col_name.text_input("栏目名称", cat['name'], key=f"cat_name_{i}")
-            if new_cat_name != cat['name']:
-                cat['name'] = new_cat_name
-                save_profiles()
-                
-            if col_del.button("🗑️ 删除栏目", key=f"del_cat_{i}"):
-                if cat['id'] == 'tape':
-                    st.error("核心胶带栏目不能删除！")
-                else:
-                    categories.pop(i)
-                    save_profiles()
-                    st.rerun()
-            
-            st.divider()
-            
-            # 遍历规则
-            for j, item in enumerate(cat['items']):
-                c1, c2, c3, c4 = st.columns([2, 1.5, 2, 0.5])
-                
-                # 1. 模板
-                new_tmpl = c1.text_input("语句模板", item['template'], key=f"t_{i}_{j}", placeholder="例如: 使用【】色系")
-                if new_tmpl != item['template']:
-                    item['template'] = new_tmpl
-                    save_profiles()
+    # 检查当前用户是否已解锁
+    is_unlocked = st.session_state.unlocked_status.get(current_uid, False)
 
-                # 2. 类型
-                type_map = {"list": "文字列表", "range": "数字范围", "fixed": "固定语句"}
-                rev_map = {v: k for k, v in type_map.items()}
-                
-                curr_type_display = type_map.get(item['type'], "文字列表")
-                new_type_display = c2.selectbox("类型", list(type_map.values()), index=list(type_map.values()).index(curr_type_display), key=f"sel_{i}_{j}")
-                new_type = rev_map[new_type_display]
-                
-                if new_type != item['type']:
-                    item['type'] = new_type
-                    # 重置数据结构以防报错
-                    if new_type == 'range':
-                        item['min'] = 1
-                        item['max'] = 10
-                    elif new_type == 'list':
-                        item['options'] = ""
-                    save_profiles()
-                    st.rerun()
-
-                # 3. 内容
-                if item['type'] == 'list':
-                    new_opt = c3.text_input("选项 (逗号隔开)", item.get('options', ''), key=f"opt_{i}_{j}")
-                    if new_opt != item.get('options', ''):
-                        item['options'] = new_opt
-                        save_profiles()
-                elif item['type'] == 'range':
-                    rc1, rc2 = c3.columns(2)
-                    new_min = rc1.number_input("小", value=int(item.get('min', 1)), key=f"min_{i}_{j}")
-                    new_max = rc2.number_input("大", value=int(item.get('max', 10)), key=f"max_{i}_{j}")
-                    if new_min != item.get('min') or new_max != item.get('max'):
-                        item['min'] = new_min
-                        item['max'] = new_max
-                        save_profiles()
-                else:
-                    c3.text("无随机内容")
-
-                # 4. 删除规则
-                if c4.button("x", key=f"del_item_{i}_{j}"):
-                    cat['items'].pop(j)
-                    save_profiles()
-                    st.rerun()
-
-            # 添加新规则按钮
-            if st.button("➕ 添加一条规则", key=f"add_item_{i}"):
-                cat['items'].append({
-                    "id": str(datetime.datetime.now().timestamp()), 
-                    "template": "使用【】", 
-                    "type": "list", 
-                    "options": "A,B"
-                })
-                save_profiles()
+    if not is_unlocked:
+        st.warning("🔒 该区域受密码保护")
+        col_pwd_1, col_pwd_2 = st.columns([3, 1])
+        input_pwd = col_pwd_1.text_input("请输入密码进行编辑", type="password", key="unlock_input")
+        if col_pwd_2.button("🔓 解锁编辑", key="btn_unlock"):
+            if input_pwd == current_profile.get('password'):
+                st.session_state.unlocked_status[current_uid] = True
                 st.rerun()
+            else:
+                st.error("密码错误！")
+    else:
+        # --- 只有解锁后才显示原本的内容 ---
+        st.success(f"🔓 已解锁编辑权限")
+        st.caption("⚠️ 修改后会自动保存。刷新页面需重新解锁。")
+        
+        categories = current_profile['data']
+        
+        for i, cat in enumerate(categories):
+            with st.expander(f"📁 {cat['name']} ({len(cat['items'])}条规则)"):
+                
+                col_name, col_del = st.columns([3, 1])
+                new_cat_name = col_name.text_input("栏目名称", cat['name'], key=f"cat_name_{i}")
+                if new_cat_name != cat['name']:
+                    cat['name'] = new_cat_name
+                    save_profiles()
+                    
+                if col_del.button("🗑️ 删除栏目", key=f"del_cat_{i}"):
+                    if cat['id'] == 'tape':
+                        st.error("核心胶带栏目不能删除！")
+                    else:
+                        categories.pop(i)
+                        save_profiles()
+                        st.rerun()
+                
+                st.divider()
+                
+                for j, item in enumerate(cat['items']):
+                    c1, c2, c3, c4 = st.columns([2, 1.5, 2, 0.5])
+                    
+                    new_tmpl = c1.text_input("语句模板", item['template'], key=f"t_{i}_{j}", placeholder="例如: 使用【】色系")
+                    if new_tmpl != item['template']:
+                        item['template'] = new_tmpl
+                        save_profiles()
 
-    # 添加新栏目
-    st.divider()
-    if st.button("✨ 添加一个新素材栏目 (例如: 贴纸/特殊任务)", use_container_width=True):
-        categories.append({
-            "id": str(datetime.datetime.now().timestamp()),
-            "name": "新栏目",
-            "items": [{"id": "new", "template": "使用【】", "type": "list", "options": "选项1,选项2"}]
-        })
-        save_profiles()
-        st.rerun()
+                    type_map = {"list": "文字列表", "range": "数字范围", "fixed": "固定语句"}
+                    rev_map = {v: k for k, v in type_map.items()}
+                    
+                    curr_type_display = type_map.get(item['type'], "文字列表")
+                    new_type_display = c2.selectbox("类型", list(type_map.values()), index=list(type_map.values()).index(curr_type_display), key=f"sel_{i}_{j}")
+                    new_type = rev_map[new_type_display]
+                    
+                    if new_type != item['type']:
+                        item['type'] = new_type
+                        if new_type == 'range':
+                            item['min'] = 1
+                            item['max'] = 10
+                        elif new_type == 'list':
+                            item['options'] = ""
+                        save_profiles()
+                        st.rerun()
+
+                    if item['type'] == 'list':
+                        new_opt = c3.text_input("选项 (逗号隔开)", item.get('options', ''), key=f"opt_{i}_{j}")
+                        if new_opt != item.get('options', ''):
+                            item['options'] = new_opt
+                            save_profiles()
+                    elif item['type'] == 'range':
+                        rc1, rc2 = c3.columns(2)
+                        new_min = rc1.number_input("小", value=int(item.get('min', 1)), key=f"min_{i}_{j}")
+                        new_max = rc2.number_input("大", value=int(item.get('max', 10)), key=f"max_{i}_{j}")
+                        if new_min != item.get('min') or new_max != item.get('max'):
+                            item['min'] = new_min
+                            item['max'] = new_max
+                            save_profiles()
+                    else:
+                        c3.text("无随机内容")
+
+                    if c4.button("x", key=f"del_item_{i}_{j}"):
+                        cat['items'].pop(j)
+                        save_profiles()
+                        st.rerun()
+
+                if st.button("➕ 添加一条规则", key=f"add_item_{i}"):
+                    cat['items'].append({
+                        "id": str(datetime.datetime.now().timestamp()), 
+                        "template": "使用【】", 
+                        "type": "list", 
+                        "options": "A,B"
+                    })
+                    save_profiles()
+                    st.rerun()
+
+        st.divider()
+        if st.button("✨ 添加一个新素材栏目 (例如: 贴纸/特殊任务)", use_container_width=True):
+            categories.append({
+                "id": str(datetime.datetime.now().timestamp()),
+                "name": "新栏目",
+                "items": [{"id": "new", "template": "使用【】", "type": "list", "options": "选项1,选项2"}]
+            })
+            save_profiles()
+            st.rerun()
