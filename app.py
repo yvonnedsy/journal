@@ -288,7 +288,7 @@ with tab2:
     is_unlocked = st.session_state.unlocked_status.get(current_uid, False)
 
     if not is_unlocked:
-        st.warning("🔒 该区域受密码保护")
+        st.warning("🔒 该区域受密码保护,请输入密码或建立新用户")
         col_pwd_1, col_pwd_2 = st.columns([3, 1])
         input_pwd = col_pwd_1.text_input("请输入密码进行编辑", type="password", key="unlock_input")
         if col_pwd_2.button("🔓 解锁编辑", key="btn_unlock"):
