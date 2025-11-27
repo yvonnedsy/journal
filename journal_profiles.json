@@ -56,7 +56,7 @@
             "id": "s2",
             "template": "使用【】印章",
             "type": "list",
-            "options": "松川,makkey,大宇人,som,青空亭,熊猫,tai,文字"
+            "options": "松川,makkey,大宇人,som,青空亭,熊猫,tai,文字,熊猫日志"
           }
         ]
       },
@@ -121,7 +121,7 @@
             "template": "使用第【】个分装版",
             "type": "range",
             "min": 1,
-            "max": 90
+            "max": 15
           }
         ]
       },
@@ -133,7 +133,7 @@
             "id": "r1",
             "template": "使用【】离型本",
             "type": "list",
-            "options": "橙色,粉色,白色,小黄,小绿,小红"
+            "options": "绿色,护照,标准"
           }
         ]
       },
@@ -146,13 +146,13 @@
             "template": "使用【】号印章盒",
             "type": "range",
             "min": 1,
-            "max": 16
+            "max": 3
           },
           {
             "id": "s2",
             "template": "使用【】印章",
             "type": "list",
-            "options": "松川,makkey,大宇人,som,青空亭,熊猫,tai,文字"
+            "options": "松川,makkey,熊猫,7uly,文字"
           }
         ]
       },
@@ -177,7 +177,7 @@
             "id": "n3",
             "template": "使用【】便签",
             "type": "list",
-            "options": "古川纸工,表现社,4legs,一笔笺,小方,papier,便签卷"
+            "options": "表现社,一笔笺,小方,便签卷"
           }
         ]
       }
