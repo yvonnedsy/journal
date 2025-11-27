@@ -383,9 +383,11 @@ with tab1:
             random.seed(None)
             time_display = datetime.datetime.now(BEIJING_TZ).strftime("%Y-%m-%d %H:%M")
             
-        active_categories = current_profile['data']
+        # 这里是确保从当前选择的用户中取数据
+        active_categories = current_profile['data']  # 确保使用当前用户的数据
         results = []
         
+        # 找到胶带类别
         tape_cat = next((c for c in active_categories if c['id'] == 'tape' or '胶带' in c['name']), None)
         if not tape_cat and active_categories: tape_cat = active_categories[0]
         
@@ -425,7 +427,6 @@ with tab1:
     # 显示结果
     if st.session_state.result:
         res = st.session_state.result
-        # 这里的 CSS 配合上面的 style 标签，保证了深色文字
         st.markdown(f"""
         <div class="result-box">
             <h3>{res['type']} <span style="font-size:0.6em;color:#666">{res['time']}</span></h3>
