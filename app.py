@@ -19,33 +19,190 @@ st.set_page_config(
 BEIJING_TZ = datetime.timezone(datetime.timedelta(hours=8))
 
 INITIAL_DATA = [
-    {
-        "id": "color", "name": "颜色",
-        "items": [{"id": "c1", "template": "使用【】色系", "type": "list", "options": "蓝,绿,红,黄,橙,黑,紫,蓝黄,紫黄,蓝红,绿黄,灰,低饱和,荧光,蓝黑,绿黑,黑红,黄黑"}]
-    },
-    {
-        "id": "tape", "name": "胶带",
-        "items": [{"id": "t1", "template": "使用第【】个分装版", "type": "range", "min": 1, "max": 90}]
-    },
-    {
-        "id": "release_book", "name": "离型本",
-        "items": [{"id": "r1", "template": "使用【】离型本", "type": "list", "options": "橙色,粉色,白色,小黄,小绿,小红"}]
-    },
-    {
-        "id": "stamp", "name": "印章",
+  {
+    "id": "user_1",
+    "name": "ddd",
+    "password": "981003",
+    "data": [
+      {
+        "id": "color",
+        "name": "颜色",
         "items": [
-            {"id": "s1", "template": "使用【】号印章盒", "type": "range", "min": 1, "max": 16},
-            {"id": "s2", "template": "使用【】印章", "type": "list", "options": "松川,makkey,大宇人,som,青空亭,熊猫,tai,文字"}
+          {
+            "id": "c1",
+            "template": "使用【】色系",
+            "type": "list",
+            "options": "蓝,绿,红,黄,橙,黑,紫,蓝黄,紫黄,蓝红,绿黄,灰,低饱和,荧光,蓝黑,绿黑,黑红,黄黑"
+          }
         ]
-    },
-    {
-        "id": "note", "name": "便签",
+      },
+      {
+        "id": "tape",
+        "name": "胶带",
         "items": [
-            {"id": "n1", "template": "本页不使用便签", "type": "fixed", "options": ""},
-            {"id": "n2", "template": "至少使用【】张便签", "type": "range", "min": 1, "max": 4},
-            {"id": "n3", "template": "使用【】便签", "type": "list", "options": "古川纸工,表现社,4legs,一笔笺,小方,papier,便签卷"}
+          {
+            "id": "t1",
+            "template": "使用第【】个分装版",
+            "type": "range",
+            "min": 1,
+            "max": 90
+          }
         ]
-    }
+      },
+      {
+        "id": "release_book",
+        "name": "离型本",
+        "items": [
+          {
+            "id": "r1",
+            "template": "使用【】离型本",
+            "type": "list",
+            "options": "橙色,粉色,白色,小黄,小绿,小红"
+          }
+        ]
+      },
+      {
+        "id": "stamp",
+        "name": "印章",
+        "items": [
+          {
+            "id": "s1",
+            "template": "使用【】号印章盒",
+            "type": "range",
+            "min": 1,
+            "max": 16
+          },
+          {
+            "id": "s2",
+            "template": "使用【】印章",
+            "type": "list",
+            "options": "松川,makkey,大宇人,som,青空亭,熊猫,tai,文字,熊猫日志"
+          }
+        ]
+      },
+      {
+        "id": "note",
+        "name": "便签",
+        "items": [
+          {
+            "id": "n1",
+            "template": "本页不使用便签",
+            "type": "fixed",
+            "options": ""
+          },
+          {
+            "id": "n2",
+            "template": "至少使用【】张便签",
+            "type": "range",
+            "min": 1,
+            "max": 4
+          },
+          {
+            "id": "n3",
+            "template": "使用【】便签",
+            "type": "list",
+            "options": "古川纸工,表现社,4legs,一笔笺,小方,papier,便签卷"
+          },
+          {
+            "id": "1764167983.683707",
+            "template": "使用第【】张一笔笺",
+            "type": "range",
+            "options": "A,B",
+            "min": 1,
+            "max": 50
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "user_2",
+    "name": "lulu",
+    "password": "981003",
+    "data": [
+      {
+        "id": "color",
+        "name": "颜色",
+        "items": [
+          {
+            "id": "c1",
+            "template": "使用【】色系",
+            "type": "list",
+            "options": "蓝,绿,红,黄,橙,黑,紫,蓝黄,紫黄,蓝红,绿黄,灰,低饱和,荧光,蓝黑,绿黑,黑红,黄黑"
+          }
+        ]
+      },
+      {
+        "id": "tape",
+        "name": "胶带",
+        "items": [
+          {
+            "id": "t1",
+            "template": "使用第【】个分装版",
+            "type": "range",
+            "min": 1,
+            "max": 15
+          }
+        ]
+      },
+      {
+        "id": "release_book",
+        "name": "离型本",
+        "items": [
+          {
+            "id": "r1",
+            "template": "使用【】离型本",
+            "type": "list",
+            "options": "绿色,护照,标准"
+          }
+        ]
+      },
+      {
+        "id": "stamp",
+        "name": "印章",
+        "items": [
+          {
+            "id": "s1",
+            "template": "使用【】号印章盒",
+            "type": "range",
+            "min": 1,
+            "max": 3
+          },
+          {
+            "id": "s2",
+            "template": "使用【】印章",
+            "type": "list",
+            "options": "松川,makkey,熊猫,7uly,文字"
+          }
+        ]
+      },
+      {
+        "id": "note",
+        "name": "便签",
+        "items": [
+          {
+            "id": "n1",
+            "template": "本页不使用便签",
+            "type": "fixed",
+            "options": ""
+          },
+          {
+            "id": "n2",
+            "template": "至少使用【】张便签",
+            "type": "range",
+            "min": 1,
+            "max": 4
+          },
+          {
+            "id": "n3",
+            "template": "使用【】便签",
+            "type": "list",
+            "options": "表现社,一笔笺,小方,便签卷"
+          }
+        ]
+      }
+    ]
+  }
 ]
 
 DATA_FILE = "journal_profiles.json"
